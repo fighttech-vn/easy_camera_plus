@@ -17,7 +17,7 @@ class _CameraScreenState extends State<CameraScreen> {
   var _initialDone = false;
   CameraController? controller;
   String? videoPath;
-
+  List<CameraController> controllers = [];
   List<CameraDescription> cameras = [];
   late int selectedCameraIdx;
 
@@ -57,50 +57,40 @@ class _CameraScreenState extends State<CameraScreen> {
     final selectedCamera = cameras[selectedCameraIdx];
     final lensDirection = selectedCamera.lensDirection;
 
-    return Expanded(
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton.icon(
-          onPressed: _onSwitchCamera,
-          icon: Icon(_getCameraLensIcon(lensDirection)),
-          label: Text(
-            lensDirection
-                .toString()
-                .substring(lensDirection.toString().indexOf('.') + 1),
-          ),
-        ),
+    return TextButton.icon(
+      onPressed: _onSwitchCamera,
+      icon: Icon(_getCameraLensIcon(lensDirection)),
+      label: Text(
+        lensDirection
+            .toString()
+            .substring(lensDirection.toString().indexOf('.') + 1),
       ),
     );
   }
 
   /// Display the control bar with buttons to record videos.
   Widget _captureControlRowWidget() {
-    return Expanded(
-      child: Align(
-        alignment: Alignment.center,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          mainAxisSize: MainAxisSize.max,
-          children: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.videocam),
-              color: Colors.blue,
-              onPressed: controller!.value.isInitialized &&
-                      !controller!.value.isRecordingVideo
-                  ? _onRecordButtonPressed
-                  : null,
-            ),
-            IconButton(
-              icon: const Icon(Icons.stop),
-              color: Colors.red,
-              onPressed: controller!.value.isInitialized &&
-                      controller!.value.isRecordingVideo
-                  ? _onStopButtonPressed
-                  : null,
-            )
-          ],
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      mainAxisSize: MainAxisSize.max,
+      children: <Widget>[
+        IconButton(
+          icon: const Icon(Icons.videocam),
+          color: Colors.blue,
+          onPressed: controller!.value.isInitialized &&
+                  !controller!.value.isRecordingVideo
+              ? _onRecordButtonPressed
+              : null,
         ),
-      ),
+        IconButton(
+          icon: const Icon(Icons.stop),
+          color: Colors.red,
+          onPressed: controller!.value.isInitialized &&
+                  controller!.value.isRecordingVideo
+              ? _onStopButtonPressed
+              : null,
+        )
+      ],
     );
   }
 
@@ -237,17 +227,39 @@ class _CameraScreenState extends State<CameraScreen> {
     }
 
     if (!controller!.value.isInitialized) {
-      return const Text(
-        'Loading',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 20.0,
-          fontWeight: FontWeight.w900,
-        ),
-      );
+      return const CircularProgressIndicator();
     }
 
-    return CameraPreview(controller!);
+    final mediaSize = MediaQuery.of(context).size;
+    final scale = 1 / (controller!.value.aspectRatio * mediaSize.aspectRatio);
+
+    final cameraPreview = CameraPreview(
+      controller!,
+      child: SafeArea(
+        minimum: const EdgeInsets.symmetric(vertical: 12),
+        child: Container(
+          alignment: Alignment.bottomCenter,
+          padding: const EdgeInsets.all(5.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              _cameraTogglesRowWidget(),
+              _captureControlRowWidget(),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return ClipRect(
+      clipper: _MediaSizeClipper(mediaSize),
+      child: Transform.scale(
+        scale: scale,
+        alignment: Alignment.topCenter,
+        child: cameraPreview,
+      ),
+    );
   }
 
   @override
@@ -261,46 +273,44 @@ class _CameraScreenState extends State<CameraScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(
-        title: const Text('Camera example'),
-      ),
       body: _initialDone == false
           ? const Text('initing')
-          : Column(
+          : Stack(
               children: <Widget>[
                 if (controller != null)
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        border: Border.all(
-                          color: controller!.value.isRecordingVideo
-                              ? Colors.redAccent
-                              : Colors.grey,
-                          width: 3.0,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(1.0),
-                        child: Center(
-                          child: _cameraPreviewWidget(),
-                        ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      border: Border.all(
+                        color: controller!.value.isRecordingVideo
+                            ? Colors.redAccent
+                            : Colors.grey,
+                        width: 3.0,
                       ),
                     ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(1.0),
+                      child: _cameraPreviewWidget(),
+                    ),
                   ),
-                Padding(
-                  padding: const EdgeInsets.all(5.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: <Widget>[
-                      _cameraTogglesRowWidget(),
-                      _captureControlRowWidget(),
-                      const Expanded(child: SizedBox()),
-                    ],
-                  ),
-                ),
               ],
             ),
     );
+  }
+}
+
+class _MediaSizeClipper extends CustomClipper<Rect> {
+  final Size mediaSize;
+
+  const _MediaSizeClipper(this.mediaSize);
+
+  @override
+  Rect getClip(Size size) {
+    return Rect.fromLTWH(0, 0, mediaSize.width, mediaSize.height);
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Rect> oldClipper) {
+    return true;
   }
 }
