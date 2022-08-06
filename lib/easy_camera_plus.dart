@@ -1,4 +1,4 @@
-library easy_camera;
+library easy_camera_plus;
 
 /// A Calculator.
 class Calculator {

@@ -10,8 +10,12 @@ class CameraScreen extends StatefulWidget {
 class _CameraScreenState extends State<CameraScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Stack(children: [
-      Text('test'),
-    ],),);
+    return Scaffold(
+      body: Stack(
+        children: const [
+          Text('test'),
+        ],
+      ),
+    );
   }
 }
