@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
@@ -42,7 +43,7 @@ class _CameraScreenState extends State<CameraScreen> {
         });
       }
     }).catchError((err) {
-      print('Error: $err.code\nError Message: $err.message');
+      log('Error: $err.code\nError Message: $err.message');
     });
   }
 
@@ -282,7 +283,7 @@ class _CameraScreenState extends State<CameraScreen> {
   void _showCameraException(CameraException e) {
     final String errorText =
         'Error: ${e.code}\nError Message: ${e.description}';
-    print(errorText);
+    log(errorText);
 
     showMessage('Error: ${e.code}\n${e.description}');
   }
