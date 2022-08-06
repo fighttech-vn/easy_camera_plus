@@ -1,8 +1,8 @@
 name: easy_camera_plus
 description: Easy custom camera plus
-version: 0.0.1
-homepage: https://github.com/FightTech-VN/easy_camera
-issue_tracker: https://github.com/FightTech-VN/easy_camera/issues
+version: 0.0.2
+homepage: https://github.com/FightTech-VN/easy_camera_plus
+issue_tracker: https://github.com/FightTech-VN/easy_camera_plus/issues
 
 environment:
   sdk: ">=2.17.6 <3.0.0"
@@ -12,10 +12,14 @@ dependencies:
   flutter:
     sdk: flutter
 
+  camera: ^0.10.0
+  path_provider: ^2.0.11
+  video_player: ^2.4.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+  flutter_lints: ^2.0.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
