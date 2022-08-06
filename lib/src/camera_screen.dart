@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path_provider/path_provider.dart';
 
 class CameraScreen extends StatefulWidget {
@@ -293,6 +294,13 @@ class _CameraScreenState extends State<CameraScreen> {
                       child: _cameraPreviewWidget(),
                     ),
                   ),
+                Align(
+                  alignment: Alignment.center,
+                  child: SvgPicture.asset(
+                    'assets/frame_preview_card.svg',
+                    package: 'easy_camera_plus',
+                  ),
+                ),
               ],
             ),
     );
