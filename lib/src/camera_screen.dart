@@ -47,86 +47,6 @@ class _CameraScreenState extends State<CameraScreen> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(
-        title: const Text('Camera example'),
-      ),
-      body: _initialDone == false
-          ? const Text('initing')
-          : Column(
-              children: <Widget>[
-                if (controller != null)
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        border: Border.all(
-                          color: controller!.value.isRecordingVideo
-                              ? Colors.redAccent
-                              : Colors.grey,
-                          width: 3.0,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(1.0),
-                        child: Center(
-                          child: _cameraPreviewWidget(),
-                        ),
-                      ),
-                    ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.all(5.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: <Widget>[
-                      _cameraTogglesRowWidget(),
-                      _captureControlRowWidget(),
-                      const Expanded(child: SizedBox()),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-
-  IconData _getCameraLensIcon(CameraLensDirection direction) {
-    switch (direction) {
-      case CameraLensDirection.back:
-        return Icons.camera_rear;
-      case CameraLensDirection.front:
-        return Icons.camera_front;
-      case CameraLensDirection.external:
-        return Icons.camera;
-      default:
-        return Icons.device_unknown;
-    }
-  }
-
-  // Display 'Loading' text when the camera is still loading.
-  Widget _cameraPreviewWidget() {
-    if (controller == null) {
-      return const SizedBox();
-    }
-
-    if (!controller!.value.isInitialized) {
-      return const Text(
-        'Loading',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 20.0,
-          fontWeight: FontWeight.w900,
-        ),
-      );
-    }
-
-    return CameraPreview(controller!);
-  }
-
   /// Display a row of toggle to select the camera
   ///  (or a message if no camera is available).
   Widget _cameraTogglesRowWidget() {
@@ -268,12 +188,15 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> _stopVideoRecording() async {
-    if (!controller!.value.isRecordingVideo) {
-      return;
-    }
-
     try {
-      await controller!.stopVideoRecording();
+      if (controller == null) {
+        return;
+      }
+
+      if (!controller!.value.isRecordingVideo) {
+        return;
+      }
+      await controller?.stopVideoRecording();
     } on CameraException catch (e) {
       _showCameraException(e);
       return;
@@ -292,5 +215,92 @@ class _CameraScreenState extends State<CameraScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(message),
     ));
+  }
+
+  IconData _getCameraLensIcon(CameraLensDirection direction) {
+    switch (direction) {
+      case CameraLensDirection.back:
+        return Icons.camera_rear;
+      case CameraLensDirection.front:
+        return Icons.camera_front;
+      case CameraLensDirection.external:
+        return Icons.camera;
+      default:
+        return Icons.device_unknown;
+    }
+  }
+
+  // Display 'Loading' text when the camera is still loading.
+  Widget _cameraPreviewWidget() {
+    if (controller == null) {
+      return const SizedBox();
+    }
+
+    if (!controller!.value.isInitialized) {
+      return const Text(
+        'Loading',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 20.0,
+          fontWeight: FontWeight.w900,
+        ),
+      );
+    }
+
+    return CameraPreview(controller!);
+  }
+
+  @override
+  void dispose() {
+    controller?.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        title: const Text('Camera example'),
+      ),
+      body: _initialDone == false
+          ? const Text('initing')
+          : Column(
+              children: <Widget>[
+                if (controller != null)
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        border: Border.all(
+                          color: controller!.value.isRecordingVideo
+                              ? Colors.redAccent
+                              : Colors.grey,
+                          width: 3.0,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(1.0),
+                        child: Center(
+                          child: _cameraPreviewWidget(),
+                        ),
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.all(5.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: <Widget>[
+                      _cameraTogglesRowWidget(),
+                      _captureControlRowWidget(),
+                      const Expanded(child: SizedBox()),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
   }
 }
