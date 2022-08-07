@@ -42,7 +42,14 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            if (imagePath != null) Image.asset(imagePath!),
+            if (imagePath != null)
+              SizedBox(
+                width: 400,
+                height: 400 * 1.48,
+                child: imagePath?.contains('http') == true
+                    ? Image.network(imagePath!)
+                    : Image.asset(imagePath!),
+              ),
             TextButton.icon(
               onPressed: () {
                 Navigator.of(context)
@@ -58,7 +65,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 });
               },
               icon: const Icon(Icons.photo_album),
-              label: const Text('Take photo'),
+              label: const Text('Take Photo'),
             ),
             TextButton.icon(
               onPressed: () {
@@ -69,7 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 );
               },
               icon: const Icon(Icons.video_camera_back_rounded),
-              label: const Text('Record video'),
+              label: const Text('Record Video'),
             ),
           ],
         ),

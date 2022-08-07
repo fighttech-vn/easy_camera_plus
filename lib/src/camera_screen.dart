@@ -193,7 +193,7 @@ class _CameraScreenState extends State<CameraScreen> {
   // }
 
   // Display 'Loading' text when the camera is still loading.
-  Widget _cameraPreviewWidget() {
+  Widget _cameraPreviewWidget([bool isFull = true]) {
     if (controller == null) {
       return const SizedBox();
     }
@@ -202,19 +202,22 @@ class _CameraScreenState extends State<CameraScreen> {
       return const SizedBox();
     }
 
-    final mediaSize = MediaQuery.of(context).size;
-    final scale = 1 / (controller!.value.aspectRatio * mediaSize.aspectRatio);
-
     final cameraPreview = CameraPreview(controller!);
+    if (isFull) {
+      final size = MediaQuery.of(context).size;
+      final deviceRatio = size.width / size.height;
+      return Transform.scale(
+        scale: controller!.value.aspectRatio / deviceRatio,
+        child: Center(
+          child: AspectRatio(
+            aspectRatio: controller!.value.aspectRatio,
+            child: cameraPreview,
+          ),
+        ),
+      );
+    }
 
-    return ClipRect(
-      clipper: _MediaSizeClipper(mediaSize),
-      child: Transform.scale(
-        scale: scale,
-        alignment: Alignment.topCenter,
-        child: cameraPreview,
-      ),
-    );
+    return Center(child: cameraPreview);
   }
 
   @override
