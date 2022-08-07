@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:path_provider/path_provider.dart';
+
+import 'services/device_service.dart';
+import 'widgets/frame_layout.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({Key? key}) : super(key: key);
@@ -21,8 +21,6 @@ class _CameraScreenState extends State<CameraScreen> {
   List<CameraController> controllers = [];
   List<CameraDescription> cameras = [];
   late int selectedCameraIdx;
-
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -48,59 +46,13 @@ class _CameraScreenState extends State<CameraScreen> {
     });
   }
 
-  /// Display a row of toggle to select the camera
-  ///  (or a message if no camera is available).
-  Widget _cameraTogglesRowWidget() {
-    if (cameras.isEmpty) {
-      return Row();
-    }
-
-    final selectedCamera = cameras[selectedCameraIdx];
-    final lensDirection = selectedCamera.lensDirection;
-
-    return TextButton.icon(
-      onPressed: _onSwitchCamera,
-      icon: Icon(_getCameraLensIcon(lensDirection)),
-      label: Text(
-        lensDirection
-            .toString()
-            .substring(lensDirection.toString().indexOf('.') + 1),
-      ),
-    );
-  }
-
-  /// Display the control bar with buttons to record videos.
-  Widget _captureControlRowWidget() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      mainAxisSize: MainAxisSize.max,
-      children: <Widget>[
-        IconButton(
-          icon: const Icon(Icons.videocam),
-          color: Colors.blue,
-          onPressed: controller!.value.isInitialized &&
-                  !controller!.value.isRecordingVideo
-              ? _onRecordButtonPressed
-              : null,
-        ),
-        IconButton(
-          icon: const Icon(Icons.stop),
-          color: Colors.red,
-          onPressed: controller!.value.isInitialized &&
-                  controller!.value.isRecordingVideo
-              ? _onStopButtonPressed
-              : null,
-        )
-      ],
-    );
-  }
-
   String timestamp() => DateTime.now().millisecondsSinceEpoch.toString();
 
   Future<void> _onCameraSwitched(CameraDescription cameraDescription) async {
     await controller?.dispose();
 
-    controller = CameraController(cameraDescription, ResolutionPreset.high);
+    controller =
+        CameraController(cameraDescription, ResolutionPreset.ultraHigh);
 
     // If the controller is updated then update the UI.
     controller?.addListener(() {
@@ -124,51 +76,50 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  void _onSwitchCamera() {
-    selectedCameraIdx =
-        selectedCameraIdx < cameras.length - 1 ? selectedCameraIdx + 1 : 0;
-    final selectedCamera = cameras[selectedCameraIdx];
+  // void _onSwitchCamera() {
+  //   selectedCameraIdx =
+  //       selectedCameraIdx < cameras.length - 1 ? selectedCameraIdx + 1 : 0;
+  //   final selectedCamera = cameras[selectedCameraIdx];
 
-    _onCameraSwitched(selectedCamera);
+  //   _onCameraSwitched(selectedCamera);
 
-    setState(() {
-      selectedCameraIdx = selectedCameraIdx;
-    });
-  }
+  //   setState(() {
+  //     selectedCameraIdx = selectedCameraIdx;
+  //   });
+  // }
 
-  void _onRecordButtonPressed() {
-    _startVideoRecording().then((String? filePath) {
-      if (filePath != null) {
-        showMessage('Recording video started');
-      }
-    });
-  }
+  // void _onRecordButtonPressed() {
+  //   _startVideoRecording().then((String? filePath) {
+  //     if (filePath != null) {
+  //       showMessage('Recording video started');
+  //     }
+  //   });
+  // }
 
-  void _onStopButtonPressed() {
-    _stopVideoRecording().then((_) {
-      showMessage('Video recorded to $videoPath');
-    });
-  }
+  // void _onStopButtonPressed() {
+  //   _stopVideoRecording().then((_) {
+  //     showMessage('Video recorded to $videoPath');
+  //   });
+  // }
 
+  // ignore: unused_element
   Future<String?> _startVideoRecording() async {
-    if (!controller!.value.isInitialized) {
+    final CameraController? cameraController = controller;
+
+    if (cameraController == null || !cameraController.value.isInitialized) {
       showMessage('Please wait');
       return null;
     }
 
     // Do nothing if a recording is on progress
-    if (controller!.value.isRecordingVideo) {
+    if (cameraController.value.isRecordingVideo) {
       return null;
     }
 
-    final Directory appDirectory = await getApplicationDocumentsDirectory();
-    final String videoDirectory = '${appDirectory.path}/Videos';
-    await Directory(videoDirectory).create(recursive: true);
-    final String currentTime = DateTime.now().millisecondsSinceEpoch.toString();
-    final String filePath = '$videoDirectory/$currentTime.mp4';
+    final filePath = await DeviceService().createPath();
 
     try {
-      await controller?.startVideoRecording();
+      await cameraController.startVideoRecording();
       videoPath = filePath;
     } on CameraException catch (e) {
       _showCameraException(e);
@@ -178,21 +129,41 @@ class _CameraScreenState extends State<CameraScreen> {
     return filePath;
   }
 
-  Future<void> _stopVideoRecording() async {
-    try {
-      if (controller == null) {
-        return;
-      }
+  Future<String?> _onTakePhoto() async {
+    final CameraController? cameraController = controller;
 
-      if (!controller!.value.isRecordingVideo) {
-        return;
-      }
-      await controller?.stopVideoRecording();
+    if (cameraController == null || !cameraController.value.isInitialized) {
+      return null;
+    }
+
+    if (cameraController.value.isTakingPicture) {
+      // A capture is already pending, do nothing.
+      return null;
+    }
+    try {
+      final file = await cameraController.takePicture();
+      return file.path;
     } on CameraException catch (e) {
       _showCameraException(e);
-      return;
+      return null;
+    } catch (e) {
+      log(e.toString());
+      return null;
     }
   }
+
+  // Future<void> _stopVideoRecording() async {
+  //   try {
+  //     if (controller == null || !controller!.value.isRecordingVideo) {
+  //       return;
+  //     }
+
+  //     await controller?.stopVideoRecording();
+  //   } on CameraException catch (e) {
+  //     _showCameraException(e);
+  //     return;
+  //   }
+  // }
 
   void _showCameraException(CameraException e) {
     final String errorText =
@@ -208,18 +179,18 @@ class _CameraScreenState extends State<CameraScreen> {
     ));
   }
 
-  IconData _getCameraLensIcon(CameraLensDirection direction) {
-    switch (direction) {
-      case CameraLensDirection.back:
-        return Icons.camera_rear;
-      case CameraLensDirection.front:
-        return Icons.camera_front;
-      case CameraLensDirection.external:
-        return Icons.camera;
-      default:
-        return Icons.device_unknown;
-    }
-  }
+  // IconData _getCameraLensIcon(CameraLensDirection direction) {
+  //   switch (direction) {
+  //     case CameraLensDirection.back:
+  //       return Icons.camera_rear;
+  //     case CameraLensDirection.front:
+  //       return Icons.camera_front;
+  //     case CameraLensDirection.external:
+  //       return Icons.camera;
+  //     default:
+  //       return Icons.device_unknown;
+  //   }
+  // }
 
   // Display 'Loading' text when the camera is still loading.
   Widget _cameraPreviewWidget() {
@@ -228,30 +199,13 @@ class _CameraScreenState extends State<CameraScreen> {
     }
 
     if (!controller!.value.isInitialized) {
-      return const CircularProgressIndicator();
+      return const SizedBox();
     }
 
     final mediaSize = MediaQuery.of(context).size;
     final scale = 1 / (controller!.value.aspectRatio * mediaSize.aspectRatio);
 
-    final cameraPreview = CameraPreview(
-      controller!,
-      child: SafeArea(
-        minimum: const EdgeInsets.symmetric(vertical: 12),
-        child: Container(
-          alignment: Alignment.bottomCenter,
-          padding: const EdgeInsets.all(5.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              _cameraTogglesRowWidget(),
-              _captureControlRowWidget(),
-            ],
-          ),
-        ),
-      ),
-    );
+    final cameraPreview = CameraPreview(controller!);
 
     return ClipRect(
       clipper: _MediaSizeClipper(mediaSize),
@@ -272,36 +226,20 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      body: _initialDone == false
-          ? const Text('initing')
-          : Stack(
-              children: <Widget>[
-                if (controller != null)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      border: Border.all(
-                        color: controller!.value.isRecordingVideo
-                            ? Colors.redAccent
-                            : Colors.grey,
-                        width: 3.0,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(1.0),
-                      child: _cameraPreviewWidget(),
-                    ),
-                  ),
-                Align(
-                  alignment: Alignment.center,
-                  child: SvgPicture.asset(
-                    'assets/frame_preview_card.svg',
-                    package: 'easy_camera_plus',
-                  ),
-                ),
-              ],
+    return Material(
+      child: _initialDone == false
+          ? const Center(child: CircularProgressIndicator())
+          : FrameLayoutWidget(
+              onTakePhoto: () {
+                _onTakePhoto().then((value) {
+                  if (value != null) {
+                    Navigator.of(context).pop(value);
+                  }
+                });
+              },
+              child: controller != null
+                  ? _cameraPreviewWidget()
+                  : const SizedBox(),
             ),
     );
   }

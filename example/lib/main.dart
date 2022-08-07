@@ -30,6 +30,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  String? imagePath;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,20 +42,27 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            if (imagePath != null) Image.asset(imagePath!),
             TextButton.icon(
               onPressed: () {
-                Navigator.of(context).push(
+                Navigator.of(context)
+                    .push(
                   MaterialPageRoute(
                     builder: (context) => const CameraScreen(),
                   ),
-                );
+                )
+                    .then((value) {
+                  setState(() {
+                    imagePath = value;
+                  });
+                });
               },
               icon: const Icon(Icons.photo_album),
               label: const Text('Take photo'),
             ),
             TextButton.icon(
               onPressed: () {
-                 Navigator.of(context).push(
+                Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => const CameraScreen(),
                   ),
