@@ -1,6 +1,8 @@
 library easy_camera_plus;
 
 export 'src/camera_screen.dart';
+export 'src/models/camera_info.dart';
+export 'src/services/camera_service.dart';
 
 /// A Calculator.
 class Calculator {

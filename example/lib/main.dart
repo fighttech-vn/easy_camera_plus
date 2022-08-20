@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:easy_camera_plus/easy_camera_plus.dart';
 import 'package:flutter/material.dart';
 
@@ -8,7 +10,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -22,7 +23,10 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
+  const MyHomePage({
+    Key? key,
+    required this.title,
+  }) : super(key: key);
   final String title;
 
   @override
@@ -32,52 +36,62 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String? imagePath;
 
+  Widget _buildImage() {
+    if (imagePath?.contains('/data/user/') == true) {
+      return Image.file(
+        File(imagePath!),
+      );
+    }
+    return imagePath?.contains('http') == true
+        ? Image.network(imagePath!)
+        : Image.asset(imagePath!);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextButton.icon(
+            onPressed: () {
+              Navigator.of(context)
+                  .push(
+                MaterialPageRoute(
+                    builder: (context) =>
+                        const CameraScreen(cameraType: CameraType.photo)),
+              )
+                  .then((value) {
+                setState(() {
+                  imagePath = value;
+                });
+              });
+            },
+            icon: const Icon(Icons.photo_album),
+            label: const Text('Take Photo'),
+          ),
+          const SizedBox(height: 10),
+          TextButton.icon(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (context) =>
+                        const CameraScreen(cameraType: CameraType.video)),
+              );
+            },
+            icon: const Icon(Icons.video_camera_back_rounded),
+            label: const Text('Record Video'),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            if (imagePath != null)
-              SizedBox(
-                width: 400,
-                height: 400 * 1.48,
-                child: imagePath?.contains('http') == true
-                    ? Image.network(imagePath!)
-                    : Image.asset(imagePath!),
-              ),
-            TextButton.icon(
-              onPressed: () {
-                Navigator.of(context)
-                    .push(
-                  MaterialPageRoute(
-                    builder: (context) => const CameraScreen(),
-                  ),
-                )
-                    .then((value) {
-                  setState(() {
-                    imagePath = value;
-                  });
-                });
-              },
-              icon: const Icon(Icons.photo_album),
-              label: const Text('Take Photo'),
-            ),
-            TextButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const CameraScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.video_camera_back_rounded),
-              label: const Text('Record Video'),
-            ),
+            if (imagePath != null) _buildImage(),
           ],
         ),
       ),

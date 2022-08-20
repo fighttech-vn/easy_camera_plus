@@ -4,77 +4,48 @@ import 'dart:developer';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
+import '../easy_camera_plus.dart';
 import 'services/device_service.dart';
 import 'widgets/frame_layout.dart';
 
 class CameraScreen extends StatefulWidget {
-  const CameraScreen({Key? key}) : super(key: key);
+  final CameraType cameraType;
+
+  const CameraScreen({Key? key, required this.cameraType}) : super(key: key);
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
 }
 
 class _CameraScreenState extends State<CameraScreen> {
-  var _initialDone = false;
   CameraController? controller;
   String? videoPath;
   List<CameraController> controllers = [];
   List<CameraDescription> cameras = [];
   late int selectedCameraIdx;
 
+  bool isDoneInit = false;
+
   @override
   void initState() {
-    super.initState();
+    CameraService().init().then((value) {
+      controllers.addAll(CameraService.info.camerasDesc
+          .map((e) => CameraController(e, ResolutionPreset.veryHigh,
+              enableAudio: false))
+          .toList());
 
-    // Get the listonNewCameraSelected of available cameras.
-    // Then set the first camera as selected.
-    availableCameras().then((availableCameras) {
-      cameras = availableCameras;
-
-      if (cameras.isNotEmpty) {
+      controller = controllers.first;
+      controller?.initialize().then((value) {
         setState(() {
-          selectedCameraIdx = 0;
+          isDoneInit = true;
         });
-
-        _onCameraSwitched(cameras[selectedCameraIdx]).then((void v) {});
-        setState(() {
-          _initialDone = true;
-        });
-      }
-    }).catchError((err) {
-      log('Error: $err.code\nError Message: $err.message');
+      });
     });
+
+    super.initState();
   }
 
   String timestamp() => DateTime.now().millisecondsSinceEpoch.toString();
-
-  Future<void> _onCameraSwitched(CameraDescription cameraDescription) async {
-    await controller?.dispose();
-
-    controller =
-        CameraController(cameraDescription, ResolutionPreset.ultraHigh);
-
-    // If the controller is updated then update the UI.
-    controller?.addListener(() {
-      if (mounted) {
-        setState(() {});
-      }
-
-      if (controller?.value.hasError ?? true) {
-        showMessage('Camera error ${controller?.value.errorDescription}');
-      }
-    });
-
-    try {
-      await controller?.initialize();
-    } on CameraException catch (e) {
-      _showCameraException(e);
-    }
-
-    if (mounted) {
-      setState(() {});
-    }
-  }
 
   // void _onSwitchCamera() {
   //   selectedCameraIdx =
@@ -105,9 +76,7 @@ class _CameraScreenState extends State<CameraScreen> {
   // ignore: unused_element
   Future<String?> _startVideoRecording() async {
     final CameraController? cameraController = controller;
-
-    if (cameraController == null || !cameraController.value.isInitialized) {
-      showMessage('Please wait');
+    if (cameraController == null) {
       return null;
     }
 
@@ -130,18 +99,15 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<String?> _onTakePhoto() async {
-    final CameraController? cameraController = controller;
-
-    if (cameraController == null || !cameraController.value.isInitialized) {
-      return null;
-    }
-
-    if (cameraController.value.isTakingPicture) {
-      // A capture is already pending, do nothing.
-      return null;
-    }
     try {
-      final file = await cameraController.takePicture();
+      if (controller == null) {
+        return null;
+      }
+      if (controller!.value.isTakingPicture) {
+        // A capture is already pending, do nothing.
+        return null;
+      }
+      final file = await controller!.takePicture();
       return file.path;
     } on CameraException catch (e) {
       _showCameraException(e);
@@ -179,45 +145,19 @@ class _CameraScreenState extends State<CameraScreen> {
     ));
   }
 
-  // IconData _getCameraLensIcon(CameraLensDirection direction) {
-  //   switch (direction) {
-  //     case CameraLensDirection.back:
-  //       return Icons.camera_rear;
-  //     case CameraLensDirection.front:
-  //       return Icons.camera_front;
-  //     case CameraLensDirection.external:
-  //       return Icons.camera;
-  //     default:
-  //       return Icons.device_unknown;
-  //   }
-  // }
-
-  // Display 'Loading' text when the camera is still loading.
-  Widget _cameraPreviewWidget([bool isFull = true]) {
+  Widget _cameraPreviewWidget() {
     if (controller == null) {
       return const SizedBox();
     }
+    final cameraPreview = AspectRatio(
+      aspectRatio: 1 / controller!.value.aspectRatio,
+      child: CameraPreview(controller!),
+    );
 
-    if (!controller!.value.isInitialized) {
-      return const SizedBox();
-    }
-
-    final cameraPreview = CameraPreview(controller!);
-    if (isFull) {
-      final size = MediaQuery.of(context).size;
-      final deviceRatio = size.width / size.height;
-      return Transform.scale(
-        scale: controller!.value.aspectRatio / deviceRatio,
-        child: Center(
-          child: AspectRatio(
-            aspectRatio: controller!.value.aspectRatio,
-            child: cameraPreview,
-          ),
-        ),
-      );
-    }
-
-    return Center(child: cameraPreview);
+    return Align(
+      alignment: Alignment.topCenter,
+      child: cameraPreview,
+    );
   }
 
   @override
@@ -229,21 +169,22 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      child: _initialDone == false
-          ? const Center(child: CircularProgressIndicator())
-          : FrameLayoutWidget(
-              onTakePhoto: () {
-                _onTakePhoto().then((value) {
-                  if (value != null) {
-                    Navigator.of(context).pop(value);
-                  }
-                });
-              },
-              child: controller != null
-                  ? _cameraPreviewWidget()
-                  : const SizedBox(),
-            ),
+    return FrameLayoutWidget(
+      cameraType: widget.cameraType,
+      onTakePhoto: () {
+        _onTakePhoto().then((value) {
+          if (value != null) {
+            Navigator.of(context).pop(value);
+          }
+        });
+      },
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        child: _cameraPreviewWidget(),
+      ),
     );
   }
 }
