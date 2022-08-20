@@ -20,7 +20,6 @@ class _CameraVideoButtonState extends State<CameraVideoButton> {
         setState(() {
           isRecording = !isRecording;
         });
-        ;
         Future.delayed(const Duration(microseconds: 600), () {
           widget.onChangeRecording(isRecording);
         });
