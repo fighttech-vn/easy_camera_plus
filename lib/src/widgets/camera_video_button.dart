@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 class CameraVideoButton extends StatefulWidget {
-  const CameraVideoButton({Key? key}) : super(key: key);
+  final void Function(bool) onChangeRecording;
+
+  const CameraVideoButton({Key? key, required this.onChangeRecording})
+      : super(key: key);
 
   @override
   State<CameraVideoButton> createState() => _CameraVideoButtonState();
@@ -16,6 +19,10 @@ class _CameraVideoButtonState extends State<CameraVideoButton> {
       onTap: () {
         setState(() {
           isRecording = !isRecording;
+        });
+        ;
+        Future.delayed(const Duration(microseconds: 600), () {
+          widget.onChangeRecording(isRecording);
         });
       },
       child: Container(

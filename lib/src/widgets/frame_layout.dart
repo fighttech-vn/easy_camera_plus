@@ -1,7 +1,10 @@
+import 'dart:developer';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../mixin/timer_mixin.dart';
 import '../models/camera_info.dart';
 import 'camera_video_button.dart';
 import 'capture_camera_button.dart';
@@ -22,7 +25,7 @@ class FrameLayoutWidget extends StatefulWidget {
   State<FrameLayoutWidget> createState() => _FrameLayoutWidgetState();
 }
 
-class _FrameLayoutWidgetState extends State<FrameLayoutWidget> {
+class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
   /// Display a row of toggle to select the camera
   ///  (or a message if no camera is available).
   // Widget _cameraTogglesRowWidget() {
@@ -67,6 +70,7 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> {
   //   );
   // }
   late CameraType cameraType;
+  bool isRecording = false;
 
   void _onTapTake() {
     widget.onTakePhoto();
@@ -93,17 +97,56 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> {
               package: 'easy_camera_plus',
             ),
           ),
+          if (cameraType == CameraType.video && isRecording)
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SafeArea(
+                  child: Center(
+                    child: Container(
+                      constraints: const BoxConstraints(minWidth: 90),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        color: Colors.red,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 4.0, horizontal: 12),
+                        child: ValueListenableBuilder<int>(
+                          valueListenable: timeCtr,
+                          builder: (context, value, child) {
+                            return Text(
+                              '${value ~/ 3600}:${value ~/ 60}:${value % 60}',
+                              textAlign: TextAlign.center,
+                              style:
+                                  Theme.of(context).textTheme.caption?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 16,
+                                        letterSpacing: -0.3,
+                                      ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    color: const Color(0xFF1A2B61),
-                    alignment: Alignment.bottomCenter,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 25, vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  color: const Color(0xFF1A2B61),
+                  alignment: Alignment.bottomCenter,
+                  padding: const EdgeInsets.symmetric(horizontal: 25),
+                  child: SafeArea(
+                    top: false,
+                    minimum: const EdgeInsets.only(bottom: 25, top: 20),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -144,12 +187,12 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> {
                                   ))
                               .toList(),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
                             SizedBox(
-                              width: 50,
+                              width: 70,
                               child: GestureDetector(
                                 onTap: Navigator.of(context).pop,
                                 child: Text(
@@ -168,13 +211,22 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> {
                                 isDisabled: false,
                                 onTap: _onTapTake,
                               ),
-                              secondChild: const CameraVideoButton(),
+                              secondChild: CameraVideoButton(
+                                onChangeRecording: (r) {
+                                  setState(() {
+                                    isRecording = r;
+                                  });
+                                  if (isRecording) {
+                                    startTimer();
+                                  }
+                                },
+                              ),
                               crossFadeState: cameraType == CameraType.photo
                                   ? CrossFadeState.showFirst
                                   : CrossFadeState.showSecond,
                             ),
                             SizedBox(
-                              width: 50,
+                              width: 70,
                               child: GestureDetector(
                                 onTap: Navigator.of(context).pop,
                                 child: const Icon(
@@ -186,12 +238,11 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 14),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           // Padding(
@@ -219,4 +270,15 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> {
       ),
     );
   }
+
+  @override
+  bool get isCountDown => true;
+
+  @override
+  void onCompleteTimer() {
+    log('---HieuLog done recoding');
+  }
+
+  @override
+  int get timeInputLimit => 15;
 }
