@@ -2,23 +2,25 @@ import 'dart:developer';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../mixin/timer_mixin.dart';
 import '../models/camera_info.dart';
 import 'camera_video_button.dart';
 import 'capture_camera_button.dart';
+import 'dot_decoration.dart';
 
 class FrameLayoutWidget extends StatefulWidget {
   final Widget child;
   final Function onTakePhoto;
   final CameraType cameraType;
+  final FrameShape? frameShape;
 
   const FrameLayoutWidget({
     Key? key,
     required this.child,
     required this.onTakePhoto,
     required this.cameraType,
+    this.frameShape,
   }) : super(key: key);
 
   @override
@@ -90,13 +92,30 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
       child: Stack(
         children: <Widget>[
           widget.child,
-          Align(
-            alignment: Alignment.center,
-            child: SvgPicture.asset(
-              'assets/frame_preview_card.svg',
-              package: 'easy_camera_plus',
-            ),
-          ),
+          if(widget.frameShape != null)
+          LayoutBuilder(builder: (context, contraint) {
+            final wid = MediaQuery.of(context).size.width * 0.8 > 400
+                ? 400.0
+                : MediaQuery.of(context).size.width * 0.8;
+            return Align(
+              alignment: Alignment.center,
+              child: widget.frameShape == FrameShape.rectangle
+                  ? Container(
+                      width: wid,
+                      height: wid / 1.7,
+                      decoration: const DottedDecoration(
+                          color: Colors.black,
+                          shape: Shape.box,
+                          strokeWidth: 3.0),
+                    )
+                  : Container(
+                      width: wid,
+                      height: wid,
+                      decoration: const DottedDecoration(
+                          shape: Shape.circle, strokeWidth: 2.0),
+                    ),
+            );
+          }),
           if (cameraType == CameraType.video && isRecording)
             Column(
               mainAxisSize: MainAxisSize.min,

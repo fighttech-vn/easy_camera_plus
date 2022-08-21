@@ -10,8 +10,13 @@ import 'widgets/frame_layout.dart';
 
 class CameraScreen extends StatefulWidget {
   final CameraType cameraType;
+  final FrameShape? frameShape;
 
-  const CameraScreen({Key? key, required this.cameraType}) : super(key: key);
+  const CameraScreen({
+    Key? key,
+    required this.cameraType,
+    this.frameShape,
+  }) : super(key: key);
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
@@ -170,6 +175,7 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   Widget build(BuildContext context) {
     return FrameLayoutWidget(
+      frameShape: widget.frameShape,
       cameraType: widget.cameraType,
       onTakePhoto: () {
         _onTakePhoto().then((value) {
