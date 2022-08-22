@@ -10,6 +10,7 @@ import 'capture_camera_button.dart';
 import 'dot_decoration.dart';
 
 class FrameLayoutWidget extends StatefulWidget {
+  final Color? colorFrame;
   final Widget child;
   final Function onTakePhoto;
   final CameraType cameraType;
@@ -21,6 +22,7 @@ class FrameLayoutWidget extends StatefulWidget {
     required this.onTakePhoto,
     required this.cameraType,
     this.frameShape,
+    this.colorFrame,
   }) : super(key: key);
 
   @override
@@ -92,30 +94,30 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
       child: Stack(
         children: <Widget>[
           widget.child,
-          if(widget.frameShape != null)
-          LayoutBuilder(builder: (context, contraint) {
-            final wid = MediaQuery.of(context).size.width * 0.8 > 400
-                ? 400.0
-                : MediaQuery.of(context).size.width * 0.8;
-            return Align(
-              alignment: Alignment.center,
-              child: widget.frameShape == FrameShape.rectangle
-                  ? Container(
-                      width: wid,
-                      height: wid / 1.7,
-                      decoration: const DottedDecoration(
-                          color: Colors.black,
-                          shape: Shape.box,
-                          strokeWidth: 3.0),
-                    )
-                  : Container(
-                      width: wid,
-                      height: wid,
-                      decoration: const DottedDecoration(
-                          shape: Shape.circle, strokeWidth: 2.0),
-                    ),
-            );
-          }),
+          if (widget.frameShape != null)
+            LayoutBuilder(builder: (context, contraint) {
+              final wid = MediaQuery.of(context).size.width * 0.8 > 400
+                  ? 400.0
+                  : MediaQuery.of(context).size.width * 0.8;
+              return Align(
+                alignment: Alignment.center,
+                child: widget.frameShape == FrameShape.rectangle
+                    ? Container(
+                        width: wid,
+                        height: wid / 1.7,
+                        decoration: const DottedDecoration(
+                            color: Colors.black,
+                            shape: Shape.box,
+                            strokeWidth: 3.0),
+                      )
+                    : Container(
+                        width: wid,
+                        height: wid,
+                        decoration: const DottedDecoration(
+                            shape: Shape.circle, strokeWidth: 2.0),
+                      ),
+              );
+            }),
           if (cameraType == CameraType.video && isRecording)
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -160,7 +162,8 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  color: const Color(0xFF1A2B61),
+                  color: widget.colorFrame ??
+                      Theme.of(context).colorScheme.secondary,
                   alignment: Alignment.bottomCenter,
                   padding: const EdgeInsets.symmetric(horizontal: 25),
                   child: SafeArea(
@@ -174,6 +177,7 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: CameraType.values
                               .map((e) => GestureDetector(
+                                    onPanUpdate: (details) {},
                                     onTap: () {
                                       setState(() {
                                         cameraType = e;
