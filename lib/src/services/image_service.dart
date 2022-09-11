@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 
 class ImageService {
-  static Future cropSquare(
+  static Future<String?> cropSquare(
     String srcFilePath,
     String destFilePath,
     Size sizeFrame,
@@ -25,6 +25,10 @@ class ImageService {
 
       final jpg = img.encodeJpg(destImage);
       await File(destFilePath).writeAsBytes(jpg);
+
+      return destFilePath;
     }
+
+    return null;
   }
 }

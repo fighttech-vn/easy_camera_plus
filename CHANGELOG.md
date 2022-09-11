@@ -1,3 +1,5 @@
+## 0.0.16
++ fix issue export image
 ## 0.0.15
 + add feature crop image with frame
 
