@@ -6,16 +6,23 @@ import 'package:flutter/material.dart';
 
 import '../easy_camera_plus.dart';
 import 'services/device_service.dart';
+import 'services/image_service.dart';
 import 'widgets/frame_layout.dart';
+
+const double kAspectRatioDefault = 9 / 16;
+const double kAspectRatioCircle = 1.0;
+const double kAspectRatioRectangle = 1.7;
 
 class CameraScreen extends StatefulWidget {
   final CameraType cameraType;
   final FrameShape? frameShape;
+  final double? aspectRatioFrame;
 
   const CameraScreen({
     Key? key,
     required this.cameraType,
     this.frameShape,
+    this.aspectRatioFrame,
   }) : super(key: key);
 
   @override
@@ -113,6 +120,7 @@ class _CameraScreenState extends State<CameraScreen> {
         return null;
       }
       final file = await controller!.takePicture();
+
       return file.path;
     } on CameraException catch (e) {
       _showCameraException(e);
@@ -174,13 +182,24 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final aspectRatio = controller == null
+        ? kAspectRatioDefault
+        : (1 / controller!.value.aspectRatio);
+    final aspectRatioFrame = widget.aspectRatioFrame ??
+        (widget.frameShape == FrameShape.circle
+            ? kAspectRatioCircle
+            : kAspectRatioRectangle);
+
     return FrameLayoutWidget(
       frameShape: widget.frameShape,
       cameraType: widget.cameraType,
-      onTakePhoto: () {
+      aspectRatio: aspectRatio,
+      aspectRatioFrame: aspectRatioFrame,
+      onTakePhoto: (Size sizeFramePixel) {
         _onTakePhoto().then((value) {
           if (value != null) {
-            Navigator.of(context).pop(value);
+            ImageService.cropSquare(value, value, sizeFramePixel)
+                .then((img) => Navigator.of(context).pop(img));
           }
         });
       },

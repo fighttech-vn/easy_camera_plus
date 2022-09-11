@@ -9,12 +9,16 @@ import 'camera_video_button.dart';
 import 'capture_camera_button.dart';
 import 'dot_decoration.dart';
 
+typedef OnTakePhoto = void Function(Size sizeFramePixel);
+
 class FrameLayoutWidget extends StatefulWidget {
   final Color? colorFrame;
   final Widget child;
-  final Function onTakePhoto;
+  final OnTakePhoto onTakePhoto;
   final CameraType cameraType;
   final FrameShape? frameShape;
+  final double aspectRatio;
+  final double aspectRatioFrame;
 
   const FrameLayoutWidget({
     Key? key,
@@ -23,6 +27,8 @@ class FrameLayoutWidget extends StatefulWidget {
     required this.cameraType,
     this.frameShape,
     this.colorFrame,
+    required this.aspectRatio,
+    required this.aspectRatioFrame,
   }) : super(key: key);
 
   @override
@@ -77,7 +83,12 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
   bool isRecording = false;
 
   void _onTapTake() {
-    widget.onTakePhoto();
+    final pixRatio = MediaQuery.of(context).devicePixelRatio;
+    final sizeScreen = MediaQuery.of(context).size;
+    final wid = sizeScreen.width * 0.8 > 400.0 ? 400.0 : sizeScreen.width * 0.8;
+    final hei = wid / widget.aspectRatioFrame;
+
+    widget.onTakePhoto(Size(wid, hei) * pixRatio);
   }
 
   @override
@@ -89,6 +100,8 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
 
   @override
   Widget build(BuildContext context) {
+    final sizeScreen = MediaQuery.of(context).size;
+
     return Material(
       color: Colors.black,
       child: Stack(
@@ -96,26 +109,30 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
           widget.child,
           if (widget.frameShape != null)
             LayoutBuilder(builder: (context, contraint) {
-              final wid = MediaQuery.of(context).size.width * 0.8 > 400
-                  ? 400.0
-                  : MediaQuery.of(context).size.width * 0.8;
-              return Align(
-                alignment: Alignment.center,
-                child: widget.frameShape == FrameShape.rectangle
-                    ? Container(
-                        width: wid,
-                        height: wid / 1.7,
-                        decoration: const DottedDecoration(
-                            color: Colors.black,
-                            shape: Shape.box,
-                            strokeWidth: 3.0),
-                      )
-                    : Container(
-                        width: wid,
-                        height: wid,
-                        decoration: const DottedDecoration(
-                            shape: Shape.circle, strokeWidth: 2.0),
-                      ),
+              final wid =
+                  sizeScreen.width * 0.8 > 400 ? 400.0 : sizeScreen.width * 0.8;
+
+              return SizedBox(
+                width: sizeScreen.width,
+                height: sizeScreen.width / widget.aspectRatio,
+                child: Align(
+                  alignment: Alignment.center,
+                  child: widget.frameShape == FrameShape.rectangle
+                      ? Container(
+                          width: wid,
+                          height: wid / widget.aspectRatioFrame,
+                          decoration: const DottedDecoration(
+                              color: Colors.black,
+                              shape: Shape.box,
+                              strokeWidth: 3.0),
+                        )
+                      : Container(
+                          width: wid,
+                          height: wid,
+                          decoration: const DottedDecoration(
+                              shape: Shape.circle, strokeWidth: 2.0),
+                        ),
+                ),
               );
             }),
           if (cameraType == CameraType.video && isRecording)

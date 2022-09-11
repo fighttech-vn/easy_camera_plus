@@ -96,6 +96,26 @@ class _MyHomePageState extends State<MyHomePage> {
           const SizedBox(height: 10),
           TextButton.icon(
             onPressed: () {
+              Navigator.of(context)
+                  .push(
+                MaterialPageRoute(
+                    builder: (context) => const CameraScreen(
+                          cameraType: CameraType.photo,
+                          frameShape: FrameShape.rectangle,
+                        )),
+              )
+                  .then((value) {
+                setState(() {
+                  imagePath = value;
+                });
+              });
+            },
+            icon: const Icon(Icons.photo_album),
+            label: const Text('Take Photo Frame rectangle'),
+          ),
+          const SizedBox(height: 10),
+          TextButton.icon(
+            onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
                     builder: (context) =>
