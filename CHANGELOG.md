@@ -1,3 +1,6 @@
+## 0.0.15
++ add feature crop image with frame
+
 ## 0.0.10
 + add Video photo frame timer 
 
