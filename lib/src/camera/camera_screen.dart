@@ -4,10 +4,10 @@ import 'dart:developer';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
-import '../easy_camera_plus.dart';
-import 'services/device_service.dart';
-import 'services/image_service.dart';
-import 'widgets/frame_layout.dart';
+import '../../easy_camera_plus.dart';
+import '../services/device_service.dart';
+import '../services/image_service.dart';
+import '../widgets/frame_layout.dart';
 
 const double kAspectRatioDefault = 9 / 16;
 const double kAspectRatioCircle = 1.0;
@@ -17,12 +17,14 @@ class CameraScreen extends StatefulWidget {
   final CameraType cameraType;
   final FrameShape? frameShape;
   final double? aspectRatioFrame;
+  final bool useCameraBack;
 
   const CameraScreen({
     Key? key,
     required this.cameraType,
     this.frameShape,
     this.aspectRatioFrame,
+    this.useCameraBack = true,
   }) : super(key: key);
 
   @override
@@ -38,54 +40,37 @@ class _CameraScreenState extends State<CameraScreen> {
 
   bool isDoneInit = false;
 
+  var _openCamera = false;
+
+  String timestamp() => DateTime.now().millisecondsSinceEpoch.toString();
+
   @override
   void initState() {
     CameraService().init().then((value) {
       controllers.addAll(CameraService.info.camerasDesc
-          .map((e) => CameraController(e, ResolutionPreset.veryHigh,
-              enableAudio: false))
+          .map((e) => CameraController(
+                e,
+                ResolutionPreset.veryHigh,
+                enableAudio: false,
+              ))
           .toList());
 
-      controller = controllers.first;
+      controller = widget.useCameraBack ? controllers.first : controllers.last;
+
       controller?.initialize().then((value) {
         setState(() {
           isDoneInit = true;
         });
+
+        if (widget.cameraType == CameraType.video) {
+          _startVideoRecording();
+        }
       });
     });
 
     super.initState();
   }
 
-  String timestamp() => DateTime.now().millisecondsSinceEpoch.toString();
-
-  // void _onSwitchCamera() {
-  //   selectedCameraIdx =
-  //       selectedCameraIdx < cameras.length - 1 ? selectedCameraIdx + 1 : 0;
-  //   final selectedCamera = cameras[selectedCameraIdx];
-
-  //   _onCameraSwitched(selectedCamera);
-
-  //   setState(() {
-  //     selectedCameraIdx = selectedCameraIdx;
-  //   });
-  // }
-
-  // void _onRecordButtonPressed() {
-  //   _startVideoRecording().then((String? filePath) {
-  //     if (filePath != null) {
-  //       showMessage('Recording video started');
-  //     }
-  //   });
-  // }
-
-  // void _onStopButtonPressed() {
-  //   _stopVideoRecording().then((_) {
-  //     showMessage('Video recorded to $videoPath');
-  //   });
-  // }
-
-  // ignore: unused_element
   Future<String?> _startVideoRecording() async {
     final CameraController? cameraController = controller;
     if (cameraController == null) {
@@ -131,18 +116,22 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  // Future<void> _stopVideoRecording() async {
-  //   try {
-  //     if (controller == null || !controller!.value.isRecordingVideo) {
-  //       return;
-  //     }
+  Future<MediaData?> _stopVideoRecording() async {
+    try {
+      if (controller == null || !controller!.value.isRecordingVideo) {
+        return null;
+      }
 
-  //     await controller?.stopVideoRecording();
-  //   } on CameraException catch (e) {
-  //     _showCameraException(e);
-  //     return;
-  //   }
-  // }
+      final file = await controller?.stopVideoRecording();
+      return MediaData(
+        path: file?.path,
+        // bytes: await file?.readAsBytes(),
+      );
+    } on CameraException catch (e) {
+      _showCameraException(e);
+      return null;
+    }
+  }
 
   void _showCameraException(CameraException e) {
     final String errorText =
@@ -196,13 +185,28 @@ class _CameraScreenState extends State<CameraScreen> {
       aspectRatio: aspectRatio,
       aspectRatioFrame: aspectRatioFrame,
       onTakePhoto: (Size sizeFramePixel) {
-        _onTakePhoto().then((value) {
-          if (value != null) {
-            ImageService.cropSquare(value, value, sizeFramePixel)
-                .then((img) => Navigator.of(context).pop(img));
-          }
-        });
+        switch (widget.cameraType) {
+          case CameraType.photo:
+            _onTakePhoto().then((value) {
+              if (value != null) {
+                ImageService.cropSquare(value, value, sizeFramePixel)
+                    .then((img) => Navigator.of(context).pop(img));
+              }
+            });
+            break;
+          case CameraType.video:
+            if (!_openCamera) {
+              _startVideoRecording();
+            } else {
+              _stopVideoRecording().then((value) {
+                Navigator.of(context).pop(value);
+              });
+            }
+            break;
+        }
+        _openCamera = true;
       },
+      onTapChangeFontBack: () {},
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
         transitionBuilder: (Widget child, Animation<double> animation) {

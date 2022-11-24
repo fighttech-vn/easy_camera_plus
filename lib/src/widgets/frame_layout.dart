@@ -19,6 +19,8 @@ class FrameLayoutWidget extends StatefulWidget {
   final FrameShape? frameShape;
   final double aspectRatio;
   final double aspectRatioFrame;
+  final void Function()? onTapChangeFontBack;
+  final int? timer;
 
   const FrameLayoutWidget({
     Key? key,
@@ -29,6 +31,8 @@ class FrameLayoutWidget extends StatefulWidget {
     this.colorFrame,
     required this.aspectRatio,
     required this.aspectRatioFrame,
+    this.onTapChangeFontBack,
+    this.timer,
   }) : super(key: key);
 
   @override
@@ -108,33 +112,36 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
         children: <Widget>[
           widget.child,
           if (widget.frameShape != null)
-            LayoutBuilder(builder: (context, contraint) {
-              final wid =
-                  sizeScreen.width * 0.8 > 400 ? 400.0 : sizeScreen.width * 0.8;
+            LayoutBuilder(
+              builder: (context, contraint) {
+                final wid = sizeScreen.width * 0.8 > 400
+                    ? 400.0
+                    : sizeScreen.width * 0.8;
 
-              return SizedBox(
-                width: sizeScreen.width,
-                height: sizeScreen.width / widget.aspectRatio,
-                child: Align(
-                  alignment: Alignment.center,
-                  child: widget.frameShape == FrameShape.rectangle
-                      ? Container(
-                          width: wid,
-                          height: wid / widget.aspectRatioFrame,
-                          decoration: const DottedDecoration(
-                              color: Colors.black,
-                              shape: Shape.box,
-                              strokeWidth: 3.0),
-                        )
-                      : Container(
-                          width: wid,
-                          height: wid,
-                          decoration: const DottedDecoration(
-                              shape: Shape.circle, strokeWidth: 2.0),
-                        ),
-                ),
-              );
-            }),
+                return SizedBox(
+                  width: sizeScreen.width,
+                  height: sizeScreen.width / widget.aspectRatio,
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: widget.frameShape == FrameShape.rectangle
+                        ? Container(
+                            width: wid,
+                            height: wid / widget.aspectRatioFrame,
+                            decoration: const DottedDecoration(
+                                color: Colors.black,
+                                shape: Shape.box,
+                                strokeWidth: 3.0),
+                          )
+                        : Container(
+                            width: wid,
+                            height: wid,
+                            decoration: const DottedDecoration(
+                                shape: Shape.circle, strokeWidth: 2.0),
+                          ),
+                  ),
+                );
+              },
+            ),
           if (cameraType == CameraType.video && isRecording)
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -231,10 +238,10 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
-                            SizedBox(
-                              width: 70,
-                              child: GestureDetector(
-                                onTap: Navigator.of(context).pop,
+                            InkWell(
+                              onTap: Navigator.of(context).pop,
+                              child: SizedBox(
+                                width: 70,
                                 child: Text(
                                   'Cancel',
                                   style: Theme.of(context)
@@ -259,17 +266,18 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
                                   if (isRecording) {
                                     startTimer();
                                   }
+                                  widget.onTakePhoto(Size.zero);
                                 },
                               ),
                               crossFadeState: cameraType == CameraType.photo
                                   ? CrossFadeState.showFirst
                                   : CrossFadeState.showSecond,
                             ),
-                            SizedBox(
-                              width: 70,
-                              child: GestureDetector(
-                                onTap: Navigator.of(context).pop,
-                                child: const Icon(
+                            InkWell(
+                              onTap: widget.onTapChangeFontBack,
+                              child: const SizedBox(
+                                width: 70,
+                                child: Icon(
                                   CupertinoIcons.camera_rotate,
                                   color: Colors.white,
                                   size: 22,
@@ -285,27 +293,6 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
               ],
             ),
           ),
-          // Padding(
-          //   padding: const EdgeInsets.symmetric(horizontal: 24).copyWith(
-          //     top: MediaQuery.of(context).padding.top + 24,
-          //   ),
-          //   child: GestureDetector(
-          //     onTap: Navigator.of(context).pop,
-          //     child: Container(
-          //       width: 32,
-          //       height: 32,
-          //       decoration: BoxDecoration(
-          //         borderRadius: BorderRadius.circular(16),
-          //         border: Border.all(color: Colors.white),
-          //       ),
-          //       child: const Icon(
-          //         Icons.close,
-          //         color: Colors.white,
-          //         size: 26,
-          //       ),
-          //     ),
-          //   ),
-          // ),
         ],
       ),
     );
@@ -317,8 +304,9 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
   @override
   void onCompleteTimer() {
     log('---HieuLog done recoding');
+    widget.onTakePhoto(Size.zero);
   }
 
   @override
-  int get timeInputLimit => 15;
+  int get timeInputLimit => widget.timer ?? 5;
 }

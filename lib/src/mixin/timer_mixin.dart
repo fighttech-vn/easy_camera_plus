@@ -4,30 +4,39 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-
 mixin TimerMixin<T extends StatefulWidget> on State<T> {
+  //  ------------ Input ------------
   bool get isCountDown;
 
   int get timeInputLimit;
 
   void onCompleteTimer();
+  //  ------------ Input DONE ------------
 
-  late ValueNotifier<int> timeCtr;
+  final ValueNotifier<int> timeCtr = ValueNotifier<int>(0);
   late Timer _timer;
 
   bool _isStart = false;
   int? _time;
 
+  int get _timestampNow => DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+  bool get isActiveTimer => _timer.isActive;
+
   @override
   void initState() {
     super.initState();
 
-    _time = DateTimeHelper.timestamp + timeInputLimit;
+    _initTimer();
+  }
+
+  void _initTimer() {
+    _time = _timestampNow + timeInputLimit;
 
     if (isCountDown && _time != null) {
-      timeCtr = ValueNotifier<int>(timeInputLimit);
+      timeCtr.value = timeInputLimit;
     } else {
-      timeCtr = ValueNotifier<int>(0);
+      timeCtr.value = 0;
     }
   }
 
@@ -36,12 +45,14 @@ mixin TimerMixin<T extends StatefulWidget> on State<T> {
     if (_isStart) {
       _timer.cancel();
     }
-
     super.dispose();
   }
 
+//  ------------ Output ------------
   void startTimer() {
+    _initTimer();
     _isStart = true;
+
     if (isCountDown && _time != null) {
       _timer = Timer.periodic(
         const Duration(seconds: 1),
@@ -52,7 +63,7 @@ mixin TimerMixin<T extends StatefulWidget> on State<T> {
           } else {
             final startTime = _time;
             if (startTime != null) {
-              timeCtr.value = startTime - DateTimeHelper.timestamp;
+              timeCtr.value = startTime - _timestampNow;
             }
           }
         },
@@ -63,13 +74,19 @@ mixin TimerMixin<T extends StatefulWidget> on State<T> {
         (Timer timer) {
           final ti = _time;
           if (ti != null) {
-            timeCtr.value = (DateTimeHelper.timestamp - ti) + 1;
+            timeCtr.value = (_timestampNow - ti) + 1;
           }
         },
       );
     }
   }
-}
-class DateTimeHelper {
-  static int get timestamp => DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+  Widget builderTimer(ValueWidgetBuilder<int> builder) =>
+      ValueListenableBuilder<int>(
+        valueListenable: timeCtr,
+        builder: (context, value, child) {
+          return builder(context, value, child);
+        },
+      );
+  //  ------------ Output DONE ------------
 }
