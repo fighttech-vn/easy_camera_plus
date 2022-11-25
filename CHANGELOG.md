@@ -1,3 +1,6 @@
+## 0.0.18
++ FIX CAMERA Front
+
 ## 0.0.17
 + Add record video 
 
