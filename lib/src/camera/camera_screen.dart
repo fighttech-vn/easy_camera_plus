@@ -47,15 +47,18 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   void initState() {
     CameraService().init().then((value) {
-      controllers.addAll(CameraService.info.camerasDesc
-          .map((e) => CameraController(
-                e,
-                ResolutionPreset.veryHigh,
-                enableAudio: false,
-              ))
-          .toList());
+      controllers.addAll(CameraService.info.camerasDesc.map((e) {
+        return CameraController(
+          e,
+          ResolutionPreset.veryHigh,
+          enableAudio: false,
+        );
+      }).toList());
 
-      controller = widget.useCameraBack ? controllers.first : controllers.last;
+      controller = widget.useCameraBack
+          ? controllers.first
+          : controllers.firstWhere((element) =>
+              element.description.lensDirection == CameraLensDirection.front);
 
       controller?.initialize().then((value) {
         setState(() {

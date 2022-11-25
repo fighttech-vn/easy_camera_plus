@@ -11,4 +11,9 @@ class CameraService {
 
     _infoModel = CameraInfo(camerasDesc: camerasDesc);
   }
+
+  CameraDescription get getFront {
+    return _infoModel.camerasDesc.firstWhere(
+        (element) => element.lensDirection == CameraLensDirection.front);
+  }
 }
