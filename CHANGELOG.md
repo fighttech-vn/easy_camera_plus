@@ -1,3 +1,6 @@
+## 1.0.2
+  * Support `flutter_bloc: ^9.1.0`
+  
 ## 1.0.0
 + Support check image exif for Android
 

@@ -1,6 +1,6 @@
 name: easy_camera_plus
 description: Easy custom camera plus
-version: 1.0.1
+version: 1.0.2
 homepage: https://github.com/FightTech-VN/easy_camera_plus
 issue_tracker: https://github.com/FightTech-VN/easy_camera_plus/issues
 
@@ -21,7 +21,7 @@ dependencies:
   exif: ^3.3.0
 
   # state management
-  flutter_bloc: ^8.1.1
+  flutter_bloc: ^9.1.0
 
 dev_dependencies:
   flutter_test:
