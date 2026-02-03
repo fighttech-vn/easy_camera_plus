@@ -1,9 +1,10 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:easy_camera_plus/easy_camera_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'image_widget.dart';
 import 'video_widget.dart';
 
 class MyApp extends StatelessWidget {
@@ -39,9 +40,22 @@ class _MyHomePageState extends State<MyHomePage> {
   Uint8List? videoFile;
 
   Widget _buildImage() {
+    if (kDebugMode) {
+      print('imagePath: $imagePath');
+    }
+
+    if (imagePath?.isEmpty == true) {
+      return const SizedBox();
+    }
+
     if (imagePath?.contains('/data/user/') == true) {
       return Image.file(
         File(imagePath!),
+      );
+    }
+    if (imagePath?.contains('/var/mobile/Containers/') == true) {
+      return LocalImageRenderer(
+        imagePath: imagePath!,
       );
     }
     return imagePath?.contains('http') == true
@@ -139,13 +153,25 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Center(child: Text(text ?? '-')),
-            if (imagePath != null) _buildImage(),
-            if (text?.isNotEmpty ?? false) VideoApp(path: text!)
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Center(
+                  child: Text(
+                imagePath ?? text ?? '-',
+                style: Theme.of(context).textTheme.titleSmall,
+              )),
+              if (imagePath != null) _buildImage(),
+              if (text?.isNotEmpty ?? false)
+                SizedBox(
+                    height: 400,
+                    child: VideoApp(
+                      path: text!,
+                    ))
+            ],
+          ),
         ),
       ),
     );

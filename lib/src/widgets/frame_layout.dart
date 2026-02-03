@@ -241,10 +241,10 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
                   color: widget.colorFrame ??
                       Theme.of(context).colorScheme.secondary,
                   alignment: Alignment.bottomCenter,
-                  padding: const EdgeInsets.symmetric(horizontal: 25),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: SafeArea(
                     top: false,
-                    minimum: const EdgeInsets.only(bottom: 25, top: 20),
+                    minimum: const EdgeInsets.only(bottom: 16, top: 12),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -252,8 +252,7 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: CameraType.values
-                              .map((e) => GestureDetector(
-                                    onPanUpdate: (details) {},
+                              .map((e) => InkWell(
                                     onTap: () {
                                       setState(() {
                                         cameraType = e;

@@ -36,6 +36,12 @@ class _VideoAppState extends State<VideoApp> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Center(
       child: _controller.value.isInitialized
@@ -45,11 +51,5 @@ class _VideoAppState extends State<VideoApp> {
             )
           : Container(),
     );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _controller.dispose();
   }
 }

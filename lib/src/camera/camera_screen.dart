@@ -50,8 +50,8 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   void initState() {
-    CameraService().init().then((value) {
-      controllers.addAll(CameraService.info.camerasDesc.map((e) {
+    availableCameras().then((value) {
+      controllers.addAll(value.map((e) {
         return CameraController(
           e,
           ResolutionPreset.veryHigh,
@@ -65,9 +65,9 @@ class _CameraScreenState extends State<CameraScreen> {
               element.description.lensDirection == CameraLensDirection.front);
 
       controller?.initialize().then((value) {
-        setState(() {
-          isDoneInit = true;
-        });
+        _currentFlashMode = controller?.value.flashMode ?? FlashMode.off;
+        isDoneInit = true;
+        setState(() {});
 
         if (widget.cameraType == CameraType.video) {
           _startVideoRecording();
