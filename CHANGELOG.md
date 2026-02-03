@@ -1,3 +1,7 @@
+## 1.0.3
++ Add feature change camera font
++ Add feature change flash mode
+
 ## 1.0.2
   * Support `flutter_bloc: ^9.1.0`
   

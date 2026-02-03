@@ -9,7 +9,11 @@ class VideoApp extends StatefulWidget {
   final String? path;
   final Uint8List? bytes;
 
-  const VideoApp({Key? key, this.path, this.bytes}) : super(key: key);
+  const VideoApp({
+    super.key,
+    this.path,
+    this.bytes,
+  });
 
   @override
   State<VideoApp> createState() => _VideoAppState();

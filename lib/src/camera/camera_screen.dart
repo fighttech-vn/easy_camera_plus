@@ -19,6 +19,7 @@ class CameraScreen extends StatefulWidget {
   final FrameShape? frameShape;
   final double? aspectRatioFrame;
   final bool useCameraBack;
+  final bool showFlashButton;
 
   const CameraScreen({
     Key? key,
@@ -26,6 +27,7 @@ class CameraScreen extends StatefulWidget {
     this.frameShape,
     this.aspectRatioFrame,
     this.useCameraBack = true,
+    this.showFlashButton = true,
   }) : super(key: key);
 
   @override
@@ -42,6 +44,7 @@ class _CameraScreenState extends State<CameraScreen> {
   bool isDoneInit = false;
 
   var _openCamera = false;
+  FlashMode _currentFlashMode = FlashMode.off;
 
   String timestamp() => DateTime.now().millisecondsSinceEpoch.toString();
 
@@ -156,6 +159,38 @@ class _CameraScreenState extends State<CameraScreen> {
     ));
   }
 
+  Future<void> _toggleFlashMode() async {
+    if (controller == null || !controller!.value.isInitialized) {
+      return;
+    }
+
+    // Cycle through flash modes: off -> always (on) -> auto -> off
+    FlashMode newMode;
+    switch (_currentFlashMode) {
+      case FlashMode.off:
+        newMode = FlashMode.always;
+        break;
+      case FlashMode.always:
+        newMode = FlashMode.auto;
+        break;
+      case FlashMode.auto:
+        newMode = FlashMode.off;
+        break;
+      case FlashMode.torch:
+        newMode = FlashMode.off;
+        break;
+    }
+
+    try {
+      await controller!.setFlashMode(newMode);
+      setState(() {
+        _currentFlashMode = newMode;
+      });
+    } catch (e) {
+      log('Error setting flash mode: $e');
+    }
+  }
+
   @override
   void dispose() {
     controller?.dispose();
@@ -244,6 +279,8 @@ class _CameraScreenState extends State<CameraScreen> {
           setState(() {});
         }
       },
+      onTapFlash: widget.showFlashButton ? _toggleFlashMode : null,
+      currentFlashMode: _currentFlashMode,
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
         transitionBuilder: (Widget child, Animation<double> animation) {
