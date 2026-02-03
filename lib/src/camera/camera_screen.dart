@@ -156,21 +156,6 @@ class _CameraScreenState extends State<CameraScreen> {
     ));
   }
 
-  Widget _cameraPreviewWidget() {
-    if (controller == null) {
-      return const SizedBox();
-    }
-    final cameraPreview = AspectRatio(
-      aspectRatio: 1 / controller!.value.aspectRatio,
-      child: CameraPreview(controller!),
-    );
-
-    return Align(
-      alignment: Alignment.topCenter,
-      child: cameraPreview,
-    );
-  }
-
   @override
   void dispose() {
     controller?.dispose();
@@ -221,13 +206,58 @@ class _CameraScreenState extends State<CameraScreen> {
         }
         _openCamera = true;
       },
-      onTapChangeFontBack: () {},
+      onTapChangeFontBack: () async {
+        if (controller == null || controllers.isEmpty) {
+          return;
+        }
+
+        // Determine the current camera direction
+        final currentDirection = controller!.description.lensDirection;
+
+        // Find the opposite camera
+        final targetDirection = currentDirection == CameraLensDirection.back
+            ? CameraLensDirection.front
+            : CameraLensDirection.back;
+
+        // Find the controller with the target direction
+        final targetController = controllers.firstWhere(
+          (c) => c.description.lensDirection == targetDirection,
+          orElse: () => controller!,
+        );
+
+        // If we found a different camera, switch to it
+        if (targetController != controller) {
+          // Set the new controller
+          controller = targetController;
+
+          // Initialize if not already initialized
+          if (!controller!.value.isInitialized) {
+            await controller!.initialize();
+          }
+
+          // Restart video recording if in video mode
+          if (widget.cameraType == CameraType.video && _openCamera) {
+            await _startVideoRecording();
+          }
+
+          // Update UI
+          setState(() {});
+        }
+      },
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
         transitionBuilder: (Widget child, Animation<double> animation) {
           return FadeTransition(opacity: animation, child: child);
         },
-        child: _cameraPreviewWidget(),
+        child: controller == null
+            ? const SizedBox()
+            : Align(
+                alignment: Alignment.topCenter,
+                child: AspectRatio(
+                  aspectRatio: 1 / controller!.value.aspectRatio,
+                  child: CameraPreview(controller!),
+                ),
+              ),
       ),
     );
   }

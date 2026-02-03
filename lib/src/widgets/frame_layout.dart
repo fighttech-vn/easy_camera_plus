@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -305,7 +303,6 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
 
   @override
   void onCompleteTimer() {
-    log('---HieuLog done recoding');
     widget.onTakePhoto(Size.zero);
   }
 
