@@ -9,7 +9,11 @@ class VideoApp extends StatefulWidget {
   final String? path;
   final Uint8List? bytes;
 
-  const VideoApp({Key? key, this.path, this.bytes}) : super(key: key);
+  const VideoApp({
+    super.key,
+    this.path,
+    this.bytes,
+  });
 
   @override
   State<VideoApp> createState() => _VideoAppState();
@@ -32,6 +36,12 @@ class _VideoAppState extends State<VideoApp> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Center(
       child: _controller.value.isInitialized
@@ -41,11 +51,5 @@ class _VideoAppState extends State<VideoApp> {
             )
           : Container(),
     );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _controller.dispose();
   }
 }

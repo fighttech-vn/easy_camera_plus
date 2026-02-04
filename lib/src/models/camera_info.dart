@@ -15,14 +15,16 @@ enum FrameShape {
 class CameraInfo {
   final List<CameraDescription> camerasDesc;
 
-  CameraInfo({required this.camerasDesc});
+  const CameraInfo({
+    required this.camerasDesc,
+  });
 }
 
 class MediaData {
   final String? path;
   final Uint8List? bytes;
 
-  MediaData({
+  const MediaData({
     this.path,
     this.bytes,
   });

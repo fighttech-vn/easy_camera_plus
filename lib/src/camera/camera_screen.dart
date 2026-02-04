@@ -19,6 +19,7 @@ class CameraScreen extends StatefulWidget {
   final FrameShape? frameShape;
   final double? aspectRatioFrame;
   final bool useCameraBack;
+  final bool showFlashButton;
 
   const CameraScreen({
     Key? key,
@@ -26,6 +27,7 @@ class CameraScreen extends StatefulWidget {
     this.frameShape,
     this.aspectRatioFrame,
     this.useCameraBack = true,
+    this.showFlashButton = true,
   }) : super(key: key);
 
   @override
@@ -42,13 +44,14 @@ class _CameraScreenState extends State<CameraScreen> {
   bool isDoneInit = false;
 
   var _openCamera = false;
+  FlashMode _currentFlashMode = FlashMode.off;
 
   String timestamp() => DateTime.now().millisecondsSinceEpoch.toString();
 
   @override
   void initState() {
-    CameraService().init().then((value) {
-      controllers.addAll(CameraService.info.camerasDesc.map((e) {
+    availableCameras().then((value) {
+      controllers.addAll(value.map((e) {
         return CameraController(
           e,
           ResolutionPreset.veryHigh,
@@ -62,9 +65,9 @@ class _CameraScreenState extends State<CameraScreen> {
               element.description.lensDirection == CameraLensDirection.front);
 
       controller?.initialize().then((value) {
-        setState(() {
-          isDoneInit = true;
-        });
+        _currentFlashMode = controller?.value.flashMode ?? FlashMode.off;
+        isDoneInit = true;
+        setState(() {});
 
         if (widget.cameraType == CameraType.video) {
           _startVideoRecording();
@@ -156,19 +159,36 @@ class _CameraScreenState extends State<CameraScreen> {
     ));
   }
 
-  Widget _cameraPreviewWidget() {
-    if (controller == null) {
-      return const SizedBox();
+  Future<void> _toggleFlashMode() async {
+    if (controller == null || !controller!.value.isInitialized) {
+      return;
     }
-    final cameraPreview = AspectRatio(
-      aspectRatio: 1 / controller!.value.aspectRatio,
-      child: CameraPreview(controller!),
-    );
 
-    return Align(
-      alignment: Alignment.topCenter,
-      child: cameraPreview,
-    );
+    // Cycle through flash modes: off -> always (on) -> auto -> off
+    FlashMode newMode;
+    switch (_currentFlashMode) {
+      case FlashMode.off:
+        newMode = FlashMode.always;
+        break;
+      case FlashMode.always:
+        newMode = FlashMode.auto;
+        break;
+      case FlashMode.auto:
+        newMode = FlashMode.off;
+        break;
+      case FlashMode.torch:
+        newMode = FlashMode.off;
+        break;
+    }
+
+    try {
+      await controller!.setFlashMode(newMode);
+      setState(() {
+        _currentFlashMode = newMode;
+      });
+    } catch (e) {
+      log('Error setting flash mode: $e');
+    }
   }
 
   @override
@@ -221,13 +241,60 @@ class _CameraScreenState extends State<CameraScreen> {
         }
         _openCamera = true;
       },
-      onTapChangeFontBack: () {},
+      onTapChangeFontBack: () async {
+        if (controller == null || controllers.isEmpty) {
+          return;
+        }
+
+        // Determine the current camera direction
+        final currentDirection = controller!.description.lensDirection;
+
+        // Find the opposite camera
+        final targetDirection = currentDirection == CameraLensDirection.back
+            ? CameraLensDirection.front
+            : CameraLensDirection.back;
+
+        // Find the controller with the target direction
+        final targetController = controllers.firstWhere(
+          (c) => c.description.lensDirection == targetDirection,
+          orElse: () => controller!,
+        );
+
+        // If we found a different camera, switch to it
+        if (targetController != controller) {
+          // Set the new controller
+          controller = targetController;
+
+          // Initialize if not already initialized
+          if (!controller!.value.isInitialized) {
+            await controller!.initialize();
+          }
+
+          // Restart video recording if in video mode
+          if (widget.cameraType == CameraType.video && _openCamera) {
+            await _startVideoRecording();
+          }
+
+          // Update UI
+          setState(() {});
+        }
+      },
+      onTapFlash: widget.showFlashButton ? _toggleFlashMode : null,
+      currentFlashMode: _currentFlashMode,
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
         transitionBuilder: (Widget child, Animation<double> animation) {
           return FadeTransition(opacity: animation, child: child);
         },
-        child: _cameraPreviewWidget(),
+        child: controller == null
+            ? const SizedBox()
+            : Align(
+                alignment: Alignment.topCenter,
+                child: AspectRatio(
+                  aspectRatio: 1 / controller!.value.aspectRatio,
+                  child: CameraPreview(controller!),
+                ),
+              ),
       ),
     );
   }

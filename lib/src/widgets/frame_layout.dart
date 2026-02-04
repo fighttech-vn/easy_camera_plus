@@ -1,5 +1,4 @@
-import 'dart:developer';
-
+import 'package:camera/camera.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -20,6 +19,8 @@ class FrameLayoutWidget extends StatefulWidget {
   final double aspectRatio;
   final double aspectRatioFrame;
   final void Function()? onTapChangeFontBack;
+  final void Function()? onTapFlash;
+  final FlashMode currentFlashMode;
   final int? timer;
 
   const FrameLayoutWidget({
@@ -32,6 +33,8 @@ class FrameLayoutWidget extends StatefulWidget {
     required this.aspectRatio,
     required this.aspectRatioFrame,
     this.onTapChangeFontBack,
+    this.onTapFlash,
+    this.currentFlashMode = FlashMode.off,
     this.timer,
   }) : super(key: key);
 
@@ -182,6 +185,53 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
                 ),
               ],
             ),
+
+          // Flash button
+          if (widget.onTapFlash != null)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: SafeArea(
+                minimum: const EdgeInsets.only(top: 12, right: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    InkWell(
+                      onTap: widget.onTapFlash,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.black26,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _getFlashIcon(widget.currentFlashMode),
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _getFlashText(widget.currentFlashMode),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           Align(
             alignment: Alignment.bottomCenter,
             child: Column(
@@ -191,10 +241,10 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
                   color: widget.colorFrame ??
                       Theme.of(context).colorScheme.secondary,
                   alignment: Alignment.bottomCenter,
-                  padding: const EdgeInsets.symmetric(horizontal: 25),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: SafeArea(
                     top: false,
-                    minimum: const EdgeInsets.only(bottom: 25, top: 20),
+                    minimum: const EdgeInsets.only(bottom: 16, top: 12),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -202,8 +252,7 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: CameraType.values
-                              .map((e) => GestureDetector(
-                                    onPanUpdate: (details) {},
+                              .map((e) => InkWell(
                                     onTap: () {
                                       setState(() {
                                         cameraType = e;
@@ -288,6 +337,7 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 16),
                       ],
                     ),
                   ),
@@ -300,12 +350,37 @@ class _FrameLayoutWidgetState extends State<FrameLayoutWidget> with TimerMixin {
     );
   }
 
+  IconData _getFlashIcon(FlashMode mode) {
+    switch (mode) {
+      case FlashMode.off:
+        return CupertinoIcons.bolt_slash;
+      case FlashMode.always:
+        return CupertinoIcons.bolt_fill;
+      case FlashMode.auto:
+        return CupertinoIcons.bolt_badge_a;
+      case FlashMode.torch:
+        return CupertinoIcons.bolt_fill;
+    }
+  }
+
+  String _getFlashText(FlashMode mode) {
+    switch (mode) {
+      case FlashMode.off:
+        return 'Off';
+      case FlashMode.always:
+        return 'On';
+      case FlashMode.auto:
+        return 'Auto';
+      case FlashMode.torch:
+        return 'Torch';
+    }
+  }
+
   @override
   bool get isCountDown => true;
 
   @override
   void onCompleteTimer() {
-    log('---HieuLog done recoding');
     widget.onTakePhoto(Size.zero);
   }
 

@@ -7,6 +7,7 @@ extension CameraBuildContextExt on BuildContext {
     required CameraType cameraType,
     FrameShape? frameShape,
     bool useCameraBack = true,
+    bool showFlashButton = true,
   }) {
     return Navigator.of(this).push(
       MaterialPageRoute(
@@ -14,17 +15,21 @@ extension CameraBuildContextExt on BuildContext {
           cameraType: cameraType,
           frameShape: frameShape,
           useCameraBack: useCameraBack,
+          showFlashButton: showFlashButton,
         ),
       ),
     );
   }
 
-  Future<T?> takePhotoAvatar<T>() async {
+  Future<T?> takePhotoAvatar<T>({
+    bool showFlashButton = false,
+  }) async {
     return Navigator.of(this).push(
       MaterialPageRoute(
-        builder: (context) => const CameraScreen(
+        builder: (context) => CameraScreen(
           cameraType: CameraType.photo,
           frameShape: FrameShape.circle,
+          showFlashButton: showFlashButton,
         ),
       ),
     );
